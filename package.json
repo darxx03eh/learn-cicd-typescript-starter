@@ -16,11 +16,13 @@
     "lint": "eslint ."
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/cors": "^2.8.17",
     "@types/eslint-plugin-security": "^3.0.1",
     "@types/express": "^5.0.0",
     "@types/node": "^22.9.0",
     "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
     "@typescript-eslint/utils": "^8.56.0",
     "@vitest/coverage-v8": "^4.0.18",
     "drizzle-kit": "^0.28.1",
