@@ -16,7 +16,7 @@
     "lint": "eslint ."
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.39.2",
     "@types/cors": "^2.8.17",
     "@types/eslint-plugin-security": "^3.0.1",
     "@types/express": "^5.0.0",
