@@ -13,8 +13,4 @@ describe("person", () => {
   test("is active", () => {
     expect(person.isActive).toBeFalsy();
   });
-  test("force fail", () => {
-  expect(1).toBe(2);
-  });
-
 });
