@@ -37,10 +37,12 @@ jobs:
       - name: Set up gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
 
-      # 7. Build and push Docker image
+      # 7. Build and push Docker image with SHA tag
       - name: Build and push Docker image
         run: |
+          IMAGE_TAG=us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:${GITHUB_SHA::8}
+          echo "Building Docker image with tag $IMAGE_TAG"
           gcloud builds submit \
-            --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:latest \
+            --tag $IMAGE_TAG \
             --service-account=cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com \
             --gcs-log-dir=gs://project-82256888-675b-4d03-af9_cloudbuild/logs
