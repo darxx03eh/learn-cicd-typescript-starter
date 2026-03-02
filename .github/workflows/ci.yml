@@ -1,46 +1,47 @@
-name: Continuous Deployment
+name: ci
 
 on:
-  push:
+  pull_request:
     branches: [main]
 
 jobs:
-  Deploy:
+  tests:
+    name: Tests
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Check out code
+        uses: actions/checkout@v4
 
-      # 2. Set up Node.js
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: 22
 
-      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests
+        run: npm run test -- --coverage
+
+  style:
+    name: Style
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Install dependencies
         run: npm ci
 
-      # 4. Build app
-      - name: Build app
-        run: npm run build
-
-      # 5. Authenticate to GCP
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-
-      # 6. Install gcloud CLI
-      - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
-
-      # 7. Build and push Docker image
-      - name: Build and push Docker image
-        run: |
-          gcloud builds submit \
-            --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:latest \
-            --service-account=cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com \
-            --logging=CLOUD_LOGGING_ONLY
+      - name: Check formatting
+        run: npm run format:check
+        
+      - name: Run lint
+        run: npm run lint -- --max-warnings=0
