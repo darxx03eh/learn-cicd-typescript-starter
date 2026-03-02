@@ -27,14 +27,17 @@ jobs:
       - name: Build app
         run: npm run build
 
-      # 5. Set up gcloud
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
+      # 5. Authenticate using service account
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
         with:
-          service_account_key: ${{ secrets.GCP_CREDENTIALS }}
-          project_id: project-82256888-675b-4d03-af9 
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      # 6. Build and push Docker image
+      # 6. Install gcloud CLI
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      # 7. Build and push Docker image
       - name: Build and push Docker image
         run: |
           gcloud builds submit \
