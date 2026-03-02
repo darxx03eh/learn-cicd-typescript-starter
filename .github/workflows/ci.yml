@@ -27,7 +27,7 @@ jobs:
       - name: Build app
         run: npm run build
 
-      # 5. Authenticate using service account
+      # 5. Authenticate to GCP
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
@@ -41,4 +41,5 @@ jobs:
       - name: Build and push Docker image
         run: |
           gcloud builds submit \
-            --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:latest .
+            --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:latest \
+            --service-account=cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com .
