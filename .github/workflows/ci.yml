@@ -38,4 +38,4 @@ jobs:
       - name: Build and push Docker image
         run: |
           gcloud builds submit \
-            --tag us-central1.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:latest .
+            --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:latest .
