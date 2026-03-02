@@ -41,20 +41,23 @@ jobs:
           audience: 'repo:darxx03eh/learn-cicd-typescript-starter'
           create_credentials_file: true
           export_environment_variables: true
-          access_token_scopes: 'https://www.googleapis.com/auth/cloud-platform'
 
-      # 6. Set up Cloud SDK
+      # 6. Verify authentication (optional, recommended)
+      - name: Test GCP authentication
+        run: gcloud auth list
+
+      # 7. Set up Cloud SDK
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v3
 
-      # 7. Build and push Docker image to Artifact Registry
+      # 8. Build and push Docker image to Artifact Registry
       - name: Build and Push to Artifact Registry
         run: |
           IMAGE_TAG=us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely:${GITHUB_SHA::8}
           echo "Building Docker image with tag $IMAGE_TAG"
           gcloud builds submit --tag $IMAGE_TAG .
 
-      # 8. Deploy to Cloud Run
+      # 9. Deploy to Cloud Run
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy notely \
