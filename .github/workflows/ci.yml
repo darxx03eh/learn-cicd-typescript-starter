@@ -43,7 +43,7 @@ jobs:
         with:
           workload_identity_provider: 'projects/830778851432/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
           service_account: 'cloud-run-deployer@project-82256888-675b-4d03-af9.iam.gserviceaccount.com'
-          audience: 'repo:AbuMulla-Mohammad/learn-cicd-typescript-starter'
+          audience: 'repo:darxx03eh/learn-cicd-typescript-starter'
 
       # 6. Set up Cloud SDK
       - name: Set up Cloud SDK
