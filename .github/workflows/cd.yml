@@ -44,12 +44,13 @@ jobs:
           gcloud auth activate-service-account --key-file="$HOME/gcp-creds.json"
           gcloud config set project project-82256888-675b-4d03-af9
 
-      # 7. Build and Push Docker image to Artifact Registry
+      # 7. Build and Push Docker image to Artifact Registry with explicit service account
       - name: Build and Push to Artifact Registry
         run: |
           IMAGE_TAG=us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely:${GITHUB_SHA::8}
           echo "Building Docker image with tag $IMAGE_TAG"
-          gcloud builds submit --tag $IMAGE_TAG .
+          gcloud builds submit --tag $IMAGE_TAG \
+            --service-account=cloud-run-deployer@project-82256888-675b-4d03-af9.iam.gserviceaccount.com .
 
       # 8. Deploy to Cloud Run
       - name: Deploy to Cloud Run
