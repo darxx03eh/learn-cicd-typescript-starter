@@ -39,6 +39,9 @@ jobs:
           workload_identity_provider: 'projects/830778851432/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
           service_account: 'cloud-run-deployer@project-82256888-675b-4d03-af9.iam.gserviceaccount.com'
           audience: 'repo:darxx03eh/learn-cicd-typescript-starter'
+          create_credentials_file: true
+          export_environment_variables: true
+          access_token_scopes: 'https://www.googleapis.com/auth/cloud-platform'
 
       # 6. Set up Cloud SDK
       - name: Set up Cloud SDK
@@ -51,7 +54,7 @@ jobs:
           echo "Building Docker image with tag $IMAGE_TAG"
           gcloud builds submit --tag $IMAGE_TAG .
 
-      # 9. Deploy to Cloud Run
+      # 8. Deploy to Cloud Run
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy notely \
