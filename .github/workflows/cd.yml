@@ -44,4 +44,57 @@ jobs:
           gcloud builds submit --service-account projects/project-82256888-675b-4d03-af9/serviceAccounts/$BUILD_SERVICE_ACCOUNT --gcs-log-dir=gs://project-82256888-675b-4d03-af9_cloudbuild/logs --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest .
 
       - name: Deploy to Cloud Run
-        run: gcloud run deploy notely --image us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest --region us-central1 --allow-unauthenticated --project project-82256888-675b-4d03-af9 --max-instances=4
+        run: |
+          set +e
+
+          DEPLOY_CMD="gcloud run deploy notely --image us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest --region us-central1 --allow-unauthenticated --project project-82256888-675b-4d03-af9 --max-instances=4"
+
+          success=0
+          for attempt in 1 2 3; do
+            echo "Cloud Run deploy attempt ${attempt}/3"
+            eval "$DEPLOY_CMD"
+            exit_code=$?
+
+            if [ "$exit_code" -eq 0 ]; then
+              success=1
+              break
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              sleep_seconds=$((attempt * 20))
+              echo "Deploy failed with exit code ${exit_code}. Retrying in ${sleep_seconds}s..."
+              sleep "$sleep_seconds"
+            fi
+          done
+
+          if [ "$success" -ne 1 ]; then
+            echo "Deploy failed after 3 attempts. Collecting Cloud Run diagnostics..."
+
+            gcloud run services describe notely \
+              --region us-central1 \
+              --project project-82256888-675b-4d03-af9 || true
+
+            latest_revision=$(gcloud run revisions list \
+              --service notely \
+              --region us-central1 \
+              --project project-82256888-675b-4d03-af9 \
+              --sort-by='~createTime' \
+              --limit=1 \
+              --format='value(metadata.name)')
+
+            if [ -n "$latest_revision" ]; then
+              echo "Latest revision: $latest_revision"
+
+              gcloud run revisions describe "$latest_revision" \
+                --region us-central1 \
+                --project project-82256888-675b-4d03-af9 || true
+
+              gcloud logging read \
+                "resource.type=cloud_run_revision AND resource.labels.service_name=notely AND resource.labels.revision_name=${latest_revision}" \
+                --project project-82256888-675b-4d03-af9 \
+                --limit=50 \
+                --format='value(textPayload)' || true
+            fi
+
+            exit 1
+          fi
