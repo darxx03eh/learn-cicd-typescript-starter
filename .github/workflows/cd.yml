@@ -48,7 +48,7 @@ jobs:
             --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely:latest \
             --project project-82256888-675b-4d03-af9 \
             --service-account=cloud-run-deployer@project-82256888-675b-4d03-af9.iam.gserviceaccount.com \
-            --logging=CLOUD_LOGGING_ONLY \
+            --gcs-log-dir=gs://project-82256888-675b-4d03-af9-cloudbuild-logs \
             .
 
       - name: Run database migrations
