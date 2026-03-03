@@ -32,7 +32,7 @@ jobs:
       - name: Build the app
         run: npm run build
 
-      # تسجيل الدخول عبر الـ WIF (باستخدام القيم الصحيحة)
+      # 5. التوثيق عبر WIF (الرقم الصحيح: 830778851432)
       - name: Authenticate to GCP
         id: auth
         uses: google-github-actions/auth@v2
@@ -43,13 +43,17 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      # بناء ودفع الصورة باستخدام ملف الإعدادات (لتجنب أخطاء الـ Flags)
+      # 7. البناء والدفع: الحل النهائي لمشكلة الـ Org Policy والـ Logging
       - name: Build and Push to Artifact Registry
         run: |
           IMAGE_TAG=us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely:${GITHUB_SHA::8}
+          
+          # استعملنا الصيغة المختصرة للـ logging اللي بتطلبها جوجل مع تحديد الحساب
+          # ووضعنا النقطة في مكانها الصحيح لتفادي مشاكل الـ arguments
           gcloud builds submit . \
-            --config=cloudbuild.yaml \
-            --substitutions=_IMAGE_TAG=$IMAGE_TAG
+            --tag=$IMAGE_TAG \
+            --service-account="projects/project-82256888-675b-4d03-af9/serviceAccounts/cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com" \
+            --logging=cloud-logging
 
       - name: Run database migrations
         run: npm run db:migrate
