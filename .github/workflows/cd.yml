@@ -46,6 +46,7 @@ jobs:
         run: |
           gcloud builds submit \
             --service-account projects/$PROJECT_ID/serviceAccounts/$BUILD_SERVICE_ACCOUNT_EMAIL \
+            --logging=CLOUD_LOGGING_ONLY \
             --tag us-central1-docker.pkg.dev/$PROJECT_ID/notely-ar-repom/notely:latest .
 
       - name: List Docker images (verify build)
