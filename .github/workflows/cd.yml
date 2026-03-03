@@ -12,6 +12,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      BUILD_SERVICE_ACCOUNT: cloud-run-deployer-71@project-82256888-675b-4d03-af9.iam.gserviceaccount.com
 
     permissions:
       contents: read
@@ -42,7 +43,7 @@ jobs:
 
       - name: Build and Push to Artifact Registry
         run: |
-          gcloud builds submit --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest .
+          gcloud builds submit --service-account projects/project-82256888-675b-4d03-af9/serviceAccounts/$BUILD_SERVICE_ACCOUNT --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest .
 
       - name: Run database migrations
         run: npm run db:migrate
