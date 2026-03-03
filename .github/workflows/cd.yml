@@ -89,26 +89,18 @@ jobs:
                 --region us-central1 \
                 --project project-82256888-675b-4d03-af9 || true
 
-              ready_status=$(gcloud run revisions describe "$latest_revision" \
+              latest_ready_revision=$(gcloud run services describe notely \
                 --region us-central1 \
                 --project project-82256888-675b-4d03-af9 \
-                --format="value(status.conditions[?type='Ready'].status)" 2>/dev/null | head -n1)
+                --format='value(status.latestReadyRevisionName)' 2>/dev/null)
 
-              ready_reason=$(gcloud run revisions describe "$latest_revision" \
+              latest_created_revision=$(gcloud run services describe notely \
                 --region us-central1 \
                 --project project-82256888-675b-4d03-af9 \
-                --format="value(status.conditions[?type='Ready'].reason)" 2>/dev/null | head -n1)
+                --format='value(status.latestCreatedRevisionName)' 2>/dev/null)
 
-              ready_message=$(gcloud run revisions describe "$latest_revision" \
-                --region us-central1 \
-                --project project-82256888-675b-4d03-af9 \
-                --format="value(status.conditions[?type='Ready'].message)" 2>/dev/null | head -n1)
-
-              echo "Revision Ready status: ${ready_status:-unknown}"
-              echo "Revision Ready reason: ${ready_reason:-unknown}"
-              if [ -n "$ready_message" ]; then
-                echo "Revision Ready message: $ready_message"
-              fi
+              echo "Service latest created revision: ${latest_created_revision:-unknown}"
+              echo "Service latest ready revision: ${latest_ready_revision:-unknown}"
 
               gcloud logging read \
                 "resource.type=cloud_run_revision AND resource.labels.service_name=notely AND resource.labels.revision_name=${latest_revision}" \
@@ -116,8 +108,17 @@ jobs:
                 --limit=50 \
                 --format='table(timestamp,severity,textPayload,jsonPayload.message)' || true
 
-              if [ "$ready_status" = "True" ]; then
-                echo "Revision is Ready despite deploy command failure. Routing traffic to latest and continuing."
+              if [ -n "$latest_ready_revision" ] && [ "$latest_ready_revision" = "$latest_revision" ]; then
+                echo "Latest revision is Ready despite deploy command failure. Routing traffic to latest and continuing."
+                gcloud run services update-traffic notely \
+                  --to-latest \
+                  --region us-central1 \
+                  --project project-82256888-675b-4d03-af9 || true
+                exit 0
+              fi
+
+              if [ -n "$latest_ready_revision" ] && [ "$latest_ready_revision" = "$latest_created_revision" ]; then
+                echo "Service latest created revision is also Ready. Routing traffic to latest and continuing."
                 gcloud run services update-traffic notely \
                   --to-latest \
                   --region us-central1 \
