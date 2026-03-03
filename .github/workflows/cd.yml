@@ -12,25 +12,20 @@ jobs:
       contents: read
 
     steps:
-      # 1. Checkout code
       - name: Check out code
         uses: actions/checkout@v4
 
-      # 2. Set up Node.js
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # 3. Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      # 4. Build the app
       - name: Build the app
         run: npm run build
 
-      # 5. Write GCP credentials from GitHub Secret to file
       - name: Set up GCP credentials
         run: |
           echo "$GCP_CREDENTIALS" > $HOME/gcp-creds.json
@@ -38,23 +33,22 @@ jobs:
         env:
           GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
 
-      # 6. Authenticate gcloud using service account key
       - name: Authenticate to GCP
         run: |
           gcloud auth activate-service-account --key-file="$HOME/gcp-creds.json"
           gcloud config set project project-82256888-675b-4d03-af9
+          # هاد السطر بيحل مشكلة الـ Logging عالمستوى العام للـ gcloud
+          gcloud config set builds/use_kaniko True
 
-      # 7. Build and Push Docker image to Artifact Registry
-      # تم إضافة --logging=cloud-logging لحل مشكلة الـ INVALID_ARGUMENT
       - name: Build and Push to Artifact Registry
         run: |
           IMAGE_TAG=us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely:${GITHUB_SHA::8}
           echo "Building Docker image with tag $IMAGE_TAG"
-          gcloud builds submit --tag $IMAGE_TAG \
-            --service-account=projects/project-82256888-675b-4d03-af9/serviceAccounts/cloud-run-deployer@project-82256888-675b-4d03-af9.iam.gserviceaccount.com \
-            --logging=cloud-logging .
+          # شلنا الـ flag اللي عامل أزمة، واكتفينا بالـ service account
+          gcloud builds submit . \
+            --tag $IMAGE_TAG \
+            --service-account=projects/project-82256888-675b-4d03-af9/serviceAccounts/cloud-run-deployer@project-82256888-675b-4d03-af9.iam.gserviceaccount.com
 
-      # 8. Deploy to Cloud Run
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy notely \
