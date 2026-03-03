@@ -57,6 +57,7 @@ jobs:
             --allow-unauthenticated \
             --project project-82256888-675b-4d03-af9 \
             --max-instances=4 \
+            --clear-secrets \
             --port=8080 \
             --memory=512Mi \
             --timeout=300 \
