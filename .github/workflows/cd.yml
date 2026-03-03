@@ -1,55 +1,70 @@
-name: Deploy to Cloud Run
+name: cd
 
 on:
   push:
-    branches:
-      - main
-
-env:
-  PROJECT_ID: project-82256888-675b-4d03-af9
-  REGION: us-central1
-  SERVICE_NAME: notely
-  REPO_NAME: notely-ar-repox
+    branches: [main]
 
 jobs:
   deploy:
+    name: Deploy
     runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
 
     permissions:
       contents: read
       id-token: write
 
     steps:
-      - name: Checkout code
+      # 1. Checkout code
+      - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
+      # 2. Set up Node
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Build the app
+      - name: Build the app
+        run: npm run build
+
+      # 5. Authenticate to GCP
+      - name: Authenticate to GCP
+        id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/82256888/locations/global/workloadIdentityPools/github-pool/providers/github
-          service_account: cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com
+          workload_identity_provider: 'projects/830778851432/locations/global/workloadIdentityPools/notely-pool-new/providers/notely-provider'
+          service_account: 'cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com'
+          audience: 'repo:darxx03eh/learn-cicd-typescript-starter'
 
+      # 6. Set up Cloud SDK
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
 
-      - name: Build and Push Image (Cloud Build)
+      # 7. Build and Push to Artifact Registry
+      - name: Build and Push to Artifact Registry
         run: |
-          IMAGE_TAG=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}:${GITHUB_SHA::8}
-          echo "Building Docker image with tag $IMAGE_TAG"
-
           gcloud builds submit \
-            --tag $IMAGE_TAG \
-            --project $PROJECT_ID \
-            --service-account=projects/$PROJECT_ID/serviceAccounts/cloud-run-deployer-903@$PROJECT_ID.iam.gserviceaccount.com \
-            --logging=CLOUD_LOGGING_ONLY
+            --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:latest .
 
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+      # 8. Run database migrations
+      - name: Run database migrations
+        run: npm run db:migrate
 
+      # 9. Deploy to Cloud Run
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy $SERVICE_NAME \
-            --image $IMAGE_TAG \
-            --region $REGION \
-            --platform managed \
+          gcloud run deploy notely \
+            --image us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:latest \
+            --region us-central1 \
             --allow-unauthenticated \
-            --project $PROJECT_ID
+            --project project-82256888-675b-4d03-af9 \
+            --max-instances=4
