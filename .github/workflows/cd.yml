@@ -32,27 +32,24 @@ jobs:
       - name: Build the app
         run: npm run build
 
-      # 5. التوثيق باستخدام القيم الحقيقية اللي اشتغلت بالـ Shell
+      # تسجيل الدخول عبر الـ WIF (باستخدام القيم الصحيحة)
       - name: Authenticate to GCP
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          # استخدمنا الاسم الصحيح للـ Pool والرقم اللي طلع معك
           workload_identity_provider: 'projects/830778851432/locations/global/workloadIdentityPools/notely-pool-new/providers/notely-provider'
           service_account: 'cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com'
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      # 7. هنا حل مشكلة الـ Org Policy اللي طلعت لك
+      # بناء ودفع الصورة باستخدام ملف الإعدادات (لتجنب أخطاء الـ Flags)
       - name: Build and Push to Artifact Registry
         run: |
           IMAGE_TAG=us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely:${GITHUB_SHA::8}
-          echo "Building Docker image with tag $IMAGE_TAG"
           gcloud builds submit . \
-            --tag $IMAGE_TAG \
-            --service-account="projects/project-82256888-675b-4d03-af9/serviceAccounts/cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com" \
-            --logging=cloud-logging
+            --config=cloudbuild.yaml \
+            --substitutions=_IMAGE_TAG=$IMAGE_TAG
 
       - name: Run database migrations
         run: npm run db:migrate
