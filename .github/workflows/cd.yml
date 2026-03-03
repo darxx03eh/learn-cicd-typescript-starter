@@ -43,10 +43,36 @@ jobs:
 
       - name: Build and Push to Artifact Registry
         run: |
-          gcloud builds submit --service-account projects/project-82256888-675b-4d03-af9/serviceAccounts/$BUILD_SERVICE_ACCOUNT --gcs-log-dir=gs://project-82256888-675b-4d03-af9_cloudbuild/logs --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest .
+          gcloud builds submit \
+            --service-account $BUILD_SERVICE_ACCOUNT \
+            --gcs-log-dir=gs://project-82256888-675b-4d03-af9_cloudbuild/logs \
+            --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest .
+
+      - name: List Docker images (verify build)
+        run: gcloud artifacts docker images list us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom
 
       - name: Run database migrations
         run: npm run db:migrate
 
-      - name: Deploy to Cloud Run
-        run: gcloud run deploy notely --image us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest --region us-central1 --allow-unauthenticated --project project-82256888-675b-4d03-af9 --max-instances=4
+      - name: Delete existing Cloud Run service (if exists)
+        run: |
+          if gcloud run services describe notely --region us-central1; then
+            gcloud run services delete notely --region us-central1 --quiet
+          fi
+
+      - name: Deploy to Cloud Run (fresh service)
+        run: |
+          gcloud run deploy notely \
+            --image us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest \
+            --region us-central1 \
+            --allow-unauthenticated \
+            --service-account $BUILD_SERVICE_ACCOUNT \
+            --max-instances=4 \
+            --concurrency=80 \
+            --timeout=300
+
+      - name: Set revision retention limit
+        run: |
+          gcloud run services update notely \
+            --region us-central1 \
+            --revision-retention-limit 5
