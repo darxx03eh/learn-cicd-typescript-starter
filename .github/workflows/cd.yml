@@ -47,6 +47,14 @@ jobs:
         run: |
           gcloud artifacts docker images describe us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest
 
+      - name: Clear old service env and secrets
+        run: |
+          gcloud run services update notely \
+            --region us-central1 \
+            --project project-82256888-675b-4d03-af9 \
+            --clear-env-vars \
+            --clear-secrets
+
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy notely \
@@ -64,6 +72,9 @@ jobs:
             --timeout=300 \
             --min-instances=0 || {
               echo "Deployment failed, fetching logs..."
-              gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=notely" --limit 50 --format json --project project-82256888-675b-4d03-af9
+              LATEST_REVISION=$(gcloud run revisions list --service notely --region us-central1 --project project-82256888-675b-4d03-af9 --format='value(metadata.name)' --limit=1)
+              echo "Latest revision: $LATEST_REVISION"
+              gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=notely AND resource.labels.revision_name=$LATEST_REVISION AND (logName=projects/project-82256888-675b-4d03-af9/logs/run.googleapis.com%2Fstdout OR logName=projects/project-82256888-675b-4d03-af9/logs/run.googleapis.com%2Fstderr)" --limit 100 --format='value(textPayload)' --project project-82256888-675b-4d03-af9
+              gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=notely AND resource.labels.revision_name=$LATEST_REVISION" --limit 30 --format json --project project-82256888-675b-4d03-af9
               exit 1
             }
