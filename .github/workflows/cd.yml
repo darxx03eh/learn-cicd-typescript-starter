@@ -89,11 +89,41 @@ jobs:
                 --region us-central1 \
                 --project project-82256888-675b-4d03-af9 || true
 
+              ready_status=$(gcloud run revisions describe "$latest_revision" \
+                --region us-central1 \
+                --project project-82256888-675b-4d03-af9 \
+                --format="value(status.conditions[?type='Ready'].status)" 2>/dev/null | head -n1)
+
+              ready_reason=$(gcloud run revisions describe "$latest_revision" \
+                --region us-central1 \
+                --project project-82256888-675b-4d03-af9 \
+                --format="value(status.conditions[?type='Ready'].reason)" 2>/dev/null | head -n1)
+
+              ready_message=$(gcloud run revisions describe "$latest_revision" \
+                --region us-central1 \
+                --project project-82256888-675b-4d03-af9 \
+                --format="value(status.conditions[?type='Ready'].message)" 2>/dev/null | head -n1)
+
+              echo "Revision Ready status: ${ready_status:-unknown}"
+              echo "Revision Ready reason: ${ready_reason:-unknown}"
+              if [ -n "$ready_message" ]; then
+                echo "Revision Ready message: $ready_message"
+              fi
+
               gcloud logging read \
                 "resource.type=cloud_run_revision AND resource.labels.service_name=notely AND resource.labels.revision_name=${latest_revision}" \
                 --project project-82256888-675b-4d03-af9 \
                 --limit=50 \
-                --format='value(textPayload)' || true
+                --format='table(timestamp,severity,textPayload,jsonPayload.message)' || true
+
+              if [ "$ready_status" = "True" ]; then
+                echo "Revision is Ready despite deploy command failure. Routing traffic to latest and continuing."
+                gcloud run services update-traffic notely \
+                  --to-latest \
+                  --region us-central1 \
+                  --project project-82256888-675b-4d03-af9 || true
+                exit 0
+              fi
             fi
 
             exit 1
