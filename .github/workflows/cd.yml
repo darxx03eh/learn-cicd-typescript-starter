@@ -60,8 +60,15 @@ jobs:
             --allow-unauthenticated \
             --project project-82256888-675b-4d03-af9 \
             --max-instances=4 \
+            --min-instances=0 \
             --memory=512Mi \
             --cpu=1 \
             --timeout=300s \
             --port=8080 \
-            --service-account=$BUILD_SERVICE_ACCOUNT
+            --service-account=$BUILD_SERVICE_ACCOUNT \
+            --revision-suffix=$(date +%s)
+
+      - name: Verify Cloud Run service
+        if: success()
+        run: |
+          gcloud run services describe notely --region us-central1 --project project-82256888-675b-4d03-af9
