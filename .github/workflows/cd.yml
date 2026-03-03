@@ -10,8 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
       BUILD_SERVICE_ACCOUNT: cloud-run-deployer-71@project-82256888-675b-4d03-af9.iam.gserviceaccount.com
 
     permissions:
