@@ -51,4 +51,8 @@ jobs:
             --allow-unauthenticated \
             --project project-82256888-675b-4d03-af9 \
             --max-instances=4 \
-            --port=8080
+            --port=8080 \
+            --memory=512Mi \
+            --cpu=1 \
+            --timeout=300 \
+            --no-cpu-throttling
