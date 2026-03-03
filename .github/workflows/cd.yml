@@ -32,26 +32,36 @@ jobs:
       - name: Build the app
         run: npm run build
 
+      # 5. التوثيق عبر WIF (تأكد من اسم الـ Pool اللي عملناه: notely-pool-new)
       - name: Authenticate to GCP
         id: auth
         uses: google-github-actions/auth@v2
         with:
+          # استخدمنا القيم اللي اشتغلت معك في الـ Shell
           workload_identity_provider: 'projects/830778851432/locations/global/workloadIdentityPools/notely-pool-new/providers/notely-provider'
           service_account: 'cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com'
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v2 # يفضل v2 للأمان والاستقرار
 
-      # الخطوة الحاسمة: استخدام --suppress-logs أو التنسيق القديم للـ Logging
+      # 7. الحل الجذري: إنشاء ملف إعدادات لحظي ينهي قصة الـ Logging والـ Service Account
       - name: Build and Push to Artifact Registry
         run: |
           IMAGE_TAG=us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely:${GITHUB_SHA::8}
           
-          # استعملنا --no-source عشان نرفع الـ Tarball صح ونحدد الـ Account 
-          # السر هنا: شلنا سطر الـ logging وحطينا بداله --default-buckets عشان نرضي الـ Policy
-          gcloud builds submit . \
-            --tag=$IMAGE_TAG \
-            --service-account="projects/project-82256888-675b-4d03-af9/serviceAccounts/cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com"
+          # إنشاء ملف config مؤقت يحل عقدة الـ INVALID_ARGUMENT
+          cat <<EOF > cloudbuild.yaml
+          steps:
+          - name: 'gcr.io/cloud-builders/docker'
+            args: ['build', '-t', '$IMAGE_TAG', '.']
+          images:
+          - '$IMAGE_TAG'
+          options:
+            logging: CLOUD_LOGGING_ONLY
+            requestedVerifyServiceAccount: 'projects/project-82256888-675b-4d03-af9/serviceAccounts/cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com'
+          EOF
+
+          gcloud builds submit --config=cloudbuild.yaml .
 
       - name: Run database migrations
         run: npm run db:migrate
