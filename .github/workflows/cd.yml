@@ -15,7 +15,6 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write
 
     steps:
       - name: Check out code
@@ -36,19 +35,17 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: 'projects/830778851432/locations/global/workloadIdentityPools/notely-pool-new/providers/notely-provider'
-          service_account: 'cloud-run-deployer@project-82256888-675b-4d03-af9.iam.gserviceaccount.com'
-          audience: 'repo:darxx03eh/learn-cicd-typescript-starter'
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v3
 
       - name: Build and Push to Artifact Registry
         run: |
-          gcloud builds submit --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely:latest .
+          gcloud builds submit --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest .
 
       - name: Run database migrations
         run: npm run db:migrate
 
       - name: Deploy to Cloud Run
-        run: gcloud run deploy notely --image us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely:latest --region us-central1 --allow-unauthenticated --project project-82256888-675b-4d03-af9 --max-instances=4
+        run: gcloud run deploy notely --image us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest --region us-central1 --allow-unauthenticated --project project-82256888-675b-4d03-af9 --max-instances=4
