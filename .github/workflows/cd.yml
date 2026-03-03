@@ -50,4 +50,5 @@ jobs:
             --region us-central1 \
             --allow-unauthenticated \
             --project project-82256888-675b-4d03-af9 \
-            --max-instances=4
+            --max-instances=4 \
+            --port=8080
