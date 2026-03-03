@@ -36,7 +36,7 @@ jobs:
       - name: Build the app
         run: npm run build
 
-      # 5. Authenticate to GCP via Workload Identity Federation
+      # 5. Authenticate to GCP via Workload Identity Federation.
       - name: Authenticate to GCP
         id: auth
         uses: google-github-actions/auth@v2
