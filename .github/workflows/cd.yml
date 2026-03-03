@@ -45,7 +45,11 @@ jobs:
 
       - name: Build and Push to Artifact Registry
         run: |
-          gcloud builds submit --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:latest .
+          gcloud builds submit \
+            --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:latest \
+            --service-account=projects/project-82256888-675b-4d03-af9/serviceAccounts/cloud-run-deployer@project-82256888-675b-4d03-af9.iam.gserviceaccount.com \
+            --project=project-82256888-675b-4d03-af9 \
+            .
 
       - name: Run database migrations
         run: npm run db:migrate
