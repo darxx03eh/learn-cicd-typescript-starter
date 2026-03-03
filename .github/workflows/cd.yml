@@ -48,5 +48,20 @@ jobs:
       # - name: Run database migrations
       #   run: npm run db:migrate
 
+      - name: Delete old Cloud Run service (if exists)
+        run: |
+          gcloud run services delete notely --region us-central1 --project project-82256888-675b-4d03-af9 --quiet || true
+
       - name: Deploy to Cloud Run
-        run: gcloud run deploy notely --image us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest --region us-central1 --allow-unauthenticated --project project-82256888-675b-4d03-af9 --max-instances=4
+        run: |
+          gcloud run deploy notely \
+            --image us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest \
+            --region us-central1 \
+            --allow-unauthenticated \
+            --project project-82256888-675b-4d03-af9 \
+            --max-instances=4 \
+            --memory=512Mi \
+            --cpu=1 \
+            --timeout=300s \
+            --port=8080 \
+            --service-account=$BUILD_SERVICE_ACCOUNT
