@@ -47,6 +47,13 @@ jobs:
         run: |
           gcloud artifacts docker images describe us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest
 
+      - name: Delete old Cloud Run service
+        run: |
+          gcloud run services delete notely \
+            --region us-central1 \
+            --project project-82256888-675b-4d03-af9 \
+            --quiet || echo "Service does not exist, will create new one"
+
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy notely \
@@ -57,8 +64,6 @@ jobs:
             --allow-unauthenticated \
             --project project-82256888-675b-4d03-af9 \
             --max-instances=4 \
-            --clear-env-vars \
-            --clear-secrets \
             --port=8080 \
             --memory=512Mi \
             --timeout=300 \
