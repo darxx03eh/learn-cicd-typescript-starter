@@ -43,16 +43,25 @@ jobs:
         run: |
           gcloud builds submit --service-account projects/project-82256888-675b-4d03-af9/serviceAccounts/$BUILD_SERVICE_ACCOUNT --gcs-log-dir=gs://project-82256888-675b-4d03-af9_cloudbuild/logs --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest .
 
+      - name: Verify image exists
+        run: |
+          gcloud artifacts docker images describe us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest
+
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy notely \
             --image us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repom/notely:latest \
+            --service-account $BUILD_SERVICE_ACCOUNT \
+            --platform managed \
             --region us-central1 \
             --allow-unauthenticated \
             --project project-82256888-675b-4d03-af9 \
             --max-instances=4 \
             --port=8080 \
             --memory=512Mi \
-            --cpu=1 \
             --timeout=300 \
-            --no-cpu-throttling
+            --min-instances=0 || {
+              echo "Deployment failed, fetching logs..."
+              gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=notely" --limit 50 --format json --project project-82256888-675b-4d03-af9
+              exit 1
+            }
