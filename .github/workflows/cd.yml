@@ -8,33 +8,55 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+
     permissions:
       contents: read
-      id-token: write # أساسي لتبادل الهوية مع جوجل
+      id-token: write
 
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
-      # تسجيل الدخول باستخدام WIF بالرقم الصحيح
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v2'
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          # استخدمنا الرقم 830778851432 اللي طلع في الـ terminal عندك
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the app
+        run: npm run build
+
+      # 5. التوثيق باستخدام القيم الحقيقية اللي اشتغلت بالـ Shell
+      - name: Authenticate to GCP
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          # استخدمنا الاسم الصحيح للـ Pool والرقم اللي طلع معك
           workload_identity_provider: 'projects/830778851432/locations/global/workloadIdentityPools/notely-pool-new/providers/notely-provider'
           service_account: 'cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com'
 
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v2'
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
-      # بناء الصورة ورفعها (بدون أي خيارات logging معقدة)
+      # 7. هنا حل مشكلة الـ Org Policy اللي طلعت لك
       - name: Build and Push to Artifact Registry
         run: |
           IMAGE_TAG=us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely:${GITHUB_SHA::8}
-          gcloud builds submit . --tag $IMAGE_TAG
+          echo "Building Docker image with tag $IMAGE_TAG"
+          gcloud builds submit . \
+            --tag $IMAGE_TAG \
+            --service-account="projects/project-82256888-675b-4d03-af9/serviceAccounts/cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com" \
+            --logging=cloud-logging
 
-      # النشر على Cloud Run
+      - name: Run database migrations
+        run: npm run db:migrate
+
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy notely \
