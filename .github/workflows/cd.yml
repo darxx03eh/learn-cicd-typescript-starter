@@ -57,7 +57,7 @@ jobs:
           gcloud builds submit --tag $IMAGE_TAG \
             --project project-82256888-675b-4d03-af9 \
             --service-account=cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com \
-            --logging=CLOUD_LOGGING_ONLY
+            --gcs-log-dir=gs://project-82256888-675b-4d03-af9-cloudbuild-logs
 
       # 8. Run database migrations
       - name: Run database migrations
