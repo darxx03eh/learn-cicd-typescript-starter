@@ -56,7 +56,8 @@ jobs:
           echo "Building Docker image with tag $IMAGE_TAG"
           gcloud builds submit --tag $IMAGE_TAG \
             --project project-82256888-675b-4d03-af9 \
-            --service-account=cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com
+            --service-account=cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com \
+            --logging=CLOUD_LOGGING_ONLY
 
       # 8. Run database migrations
       - name: Run database migrations
