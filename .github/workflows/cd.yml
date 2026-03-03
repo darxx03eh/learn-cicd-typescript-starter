@@ -55,6 +55,7 @@ jobs:
           gcloud builds submit \
             --tag us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repox/notely:latest \
             --service-account="projects/project-82256888-675b-4d03-af9/serviceAccounts/cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com" \
+            --default-logs-bucket-behavior=REGIONAL_USER_OWNED_BUCKET \
             .
 
       # 8. Run database migrations
