@@ -10,55 +10,31 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write # أساسي لتبادل الهوية مع جوجل
 
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      # تسجيل الدخول باستخدام WIF بالرقم الصحيح
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
         with:
-          node-version: 22
+          # استخدمنا الرقم 830778851432 اللي طلع في الـ terminal عندك
+          workload_identity_provider: 'projects/830778851432/locations/global/workloadIdentityPools/notely-pool-new/providers/notely-provider'
+          service_account: 'cloud-run-deployer-903@project-82256888-675b-4d03-af9.iam.gserviceaccount.com'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
 
-      - name: Build the app
-        run: npm run build
-
-      - name: Set up GCP credentials
-        run: |
-          echo "$GCP_CREDENTIALS" > $HOME/gcp-creds.json
-          chmod 600 $HOME/gcp-creds.json
-        env:
-          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-
-      - name: Authenticate to GCP
-        run: |
-          gcloud auth activate-service-account --key-file="$HOME/gcp-creds.json"
-          gcloud config set project project-82256888-675b-4d03-af9
-
-      # الخطوة السحرية: إنشاء ملف إعدادات مؤقت يرضي جوجل
-      - name: Create Cloud Build Config
-        run: |
-          cat <<EOF > cloudbuild_config.yaml
-          steps:
-            - name: 'gcr.io/cloud-builders/docker'
-              args: ['build', '-t', '${{ vars.IMAGE_TAG || 'us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely' }}:${GITHUB_SHA::8}', '.']
-          images:
-            - '${{ vars.IMAGE_TAG || 'us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely' }}:${GITHUB_SHA::8}'
-          options:
-            logging: CLOUD_LOGGING_ONLY
-          EOF
-
-      # تشغيل الـ Build باستخدام ملف الإعدادات
+      # بناء الصورة ورفعها (بدون أي خيارات logging معقدة)
       - name: Build and Push to Artifact Registry
         run: |
           IMAGE_TAG=us-central1-docker.pkg.dev/project-82256888-675b-4d03-af9/notely-ar-repo/notely:${GITHUB_SHA::8}
-          gcloud builds submit . \
-            --config=cloudbuild_config.yaml \
-            --service-account=projects/project-82256888-675b-4d03-af9/serviceAccounts/cloud-run-deployer@project-82256888-675b-4d03-af9.iam.gserviceaccount.com
+          gcloud builds submit . --tag $IMAGE_TAG
 
+      # النشر على Cloud Run
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy notely \
