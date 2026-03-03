@@ -35,7 +35,7 @@ jobs:
       - id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
-          workload_identity_provider: 'projects/830778851432/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
+          workload_identity_provider: 'projects/830778851432/locations/global/workloadIdentityPools/github-actions-pool/providers/github-action-provider'
           service_account: 'cloud-run-deployer@project-82256888-675b-4d03-af9.iam.gserviceaccount.com'
           audience: 'repo:darxx03eh/learn-cicd-typescript-starter'
 
